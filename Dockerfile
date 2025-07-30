@@ -1,5 +1,7 @@
 FROM alpine:latest
 
+
+
 # Install required packages: bash, OpenJDK, MariaDB
 RUN apk update && apk add --no-cache \
     openjdk17 \
@@ -8,13 +10,19 @@ RUN apk update && apk add --no-cache \
     curl \
     git \
     unzip
+    
+RUN rm /etc/my.cnf.d/mariadb-server.cnf
+COPY mariadb.cnf /etc/my.cnf.d/mariadb.cnf
 
 ENV MYSQL_ROOT_PASSWORD=rootpassword \
     MYSQL_DATABASE=mydatabase \
     MYSQL_USER=myuser \
     MYSQL_PASSWORD=mypassword
 
-RUN mkdir /var/lib/mysql
+RUN mkdir /var/lib/mysql \
+    && chown -R mysql:mysql /var/lib/mysql \
+    && mysql_install_db --user=mysql --basedir=/usr --datadir=/var/lib/mysql
+
 RUN mkdir -p /run/mysqld && chown -R mysql:mysql /run/mysqld
 RUN chown -R mysql:mysql /var/lib/mysql
 
@@ -38,8 +46,9 @@ WORKDIR /opt/server
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Expose both MariaDB and Spring Boot ports
-EXPOSE 3306 9888
+
+# Expose Spring Boot port
+EXPOSE 8080
 
 # Entrypoint: run MariaDB init in background, then Spring Boot app
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]

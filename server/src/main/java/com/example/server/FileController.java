@@ -1,5 +1,6 @@
 package com.example.server;
 
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,6 +27,36 @@ public class FileController {
     public FileController(FileProperties fileProperties, FileMetaDataRepository repo) {
         this.fileProperties = fileProperties;
         this.fileMetaDataRepository = repo;
+    }
+
+    @DeleteMapping("/delete")
+    public ResponseEntity<String> deleteFile(@PathVariable Long id) {
+        try {
+            Optional<FileMetaData> optionalMeta = fileMetaDataRepository.findById(id);
+
+            if (optionalMeta.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+        
+            FileMetaData meta = optionalMeta.get(); 
+
+            // Assuming files are stored under the first directory
+            String dir = fileProperties.getLocations().get(0);
+            File file = new File(dir, meta.getFilename());
+
+            if (!file.exists()) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            if(file.delete()) {
+                return ResponseEntity.ok("File deleted");
+            }else{
+                return ResponseEntity.ok("File could not be deleted");
+            }
+        }
+        catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Deletion failed: " + e.getMessage());
+        }
     }
 
     @PostMapping("/upload")
