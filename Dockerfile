@@ -9,7 +9,6 @@ RUN apk update && apk add --no-cache \
     git \
     unzip
 
-# Set environment variables for MariaDB
 ENV MYSQL_ROOT_PASSWORD=rootpassword \
     MYSQL_DATABASE=mydatabase \
     MYSQL_USER=myuser \

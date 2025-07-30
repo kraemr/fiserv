@@ -1,26 +1,14 @@
-# File Server
+# fiserv
 
-- mega.nz like interface
-- sorting into tags
-- quickly search files by name, content, tags fuzzy search
-- save files encrypted (Perhaps even TPM2 stuff)
+Simple to use file-server offering fuzzy-search, tags, accounts and more
 
 # Architecture
 
 Backend:
-Spring Boot, Java
+Spring Boot, Java, REST API
 
 Frontend:
-Electron, ReactJS and Web
+Electron, ReactJS
 
 DB:
 MariaDb
-
-# TODO
-
-- add logins and accounts
-- add encryption option
-- add good looking and functional frontend displaying tags etc
-- add search functionality
-- add option to index files
-  <>
