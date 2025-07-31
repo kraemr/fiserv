@@ -17,7 +17,8 @@ COPY mariadb.cnf /etc/my.cnf.d/mariadb.cnf
 ENV MYSQL_ROOT_PASSWORD=rootpassword \
     MYSQL_DATABASE=mydatabase \
     MYSQL_USER=myuser \
-    MYSQL_PASSWORD=mypassword
+    MYSQL_PASSWORD=mypassword \
+    FISERV_FILE_LOCATION=/opt/
 
 RUN mkdir /var/lib/mysql \
     && chown -R mysql:mysql /var/lib/mysql \

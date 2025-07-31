@@ -29,7 +29,7 @@ public class FileController {
         this.fileMetaDataRepository = repo;
     }
 
-    @DeleteMapping("/delete")
+    @DeleteMapping("/delete/{id}")
     public ResponseEntity<String> deleteFile(@PathVariable Long id) {
         try {
             Optional<FileMetaData> optionalMeta = fileMetaDataRepository.findById(id);
@@ -49,6 +49,7 @@ public class FileController {
             }
             
             if(file.delete()) {
+                fileMetaDataRepository.delete(meta);
                 return ResponseEntity.ok("File deleted");
             }else{
                 return ResponseEntity.ok("File could not be deleted");
@@ -64,6 +65,11 @@ public class FileController {
         try {
             String uploadDir = fileProperties.getLocations().get(0); // Use first directory
             File targetFile = new File(uploadDir, file.getOriginalFilename());
+
+            if(targetFile.exists()){
+                return ResponseEntity.ok("{\"success\"}");
+            }
+            
             file.transferTo(targetFile);
 
             FileMetaData meta = new FileMetaData();
@@ -80,36 +86,35 @@ public class FileController {
     }
 
 
-   @GetMapping("/download/{id}")
-public ResponseEntity<byte[]> downloadFile(@PathVariable Long id) {
-    Optional<FileMetaData> optionalMeta = fileMetaDataRepository.findById(id);
+    @GetMapping("/download/{id}")
+    public ResponseEntity<byte[]> downloadFile(@PathVariable Long id) {
+        Optional<FileMetaData> optionalMeta = fileMetaDataRepository.findById(id);
 
-    if (optionalMeta.isEmpty()) {
-        return ResponseEntity.notFound().build();
+        if (optionalMeta.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        FileMetaData meta = optionalMeta.get();
+
+        // Assuming files are stored under the first directory
+        String dir = fileProperties.getLocations().get(0);
+        File file = new File(dir, meta.getFilename());
+
+        if (!file.exists()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        try {
+            byte[] data = java.nio.file.Files.readAllBytes(file.toPath());
+
+            return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getName() + "\"")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(data);
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
-
-    FileMetaData meta = optionalMeta.get();
-
-    // Assuming files are stored under the first directory
-    String dir = fileProperties.getLocations().get(0);
-    File file = new File(dir, meta.getFilename());
-
-    if (!file.exists()) {
-        return ResponseEntity.notFound().build();
-    }
-
-    try {
-        byte[] data = java.nio.file.Files.readAllBytes(file.toPath());
-
-        return ResponseEntity.ok()
-            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getName() + "\"")
-            .contentType(MediaType.APPLICATION_OCTET_STREAM)
-            .body(data);
-    } catch (IOException e) {
-        return ResponseEntity.internalServerError().build();
-    }
-
-}
 
 @GetMapping("/meta")
 public List<FileMetaData> listMetadata() {

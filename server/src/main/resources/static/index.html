@@ -48,7 +48,6 @@
       }
 
       .fileblock:hover {
-        width: 8px;
         background-color: orange;
         border-top-left-radius: 0;
         border-top-right-radius: 0;
@@ -81,25 +80,70 @@
       .fileblock-filename {
         color: white;
       }
+
+      .menu-button {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        background: transparent;
+        color: white;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+      }
+
+      .fileblock-menu {
+        position: absolute;
+        top: 28px;
+        right: 6px;
+        background-color: #333;
+        border: 1px solid #555;
+        padding: 6px;
+        display: none;
+        flex-direction: column;
+        z-index: 100;
+      }
+
+      .fileblock-menu a {
+        color: orange;
+        text-decoration: none;
+        margin: 4px 0;
+        font-size: 14px;
+      }
+
+      .fileblock-wrapper {
+        position: relative;
+      }
     </style>
 
-    <h1>Add</h1>
-    <form id="uploadForm" enctype="multipart/form-data" method="post">
-      <input type="file" name="file" />
-      <button type="submit">Upload</button>
-    </form>
-
-    <h2>Uploaded Files</h2>
-    <div id="fileList">
-      <div class="fileblock-container">
-        <div class="stylish-fileblock-container">
-          <div class="fileblock"></div>
-          <div class="fileblock-filename">jobs</div>
-        </div>
-      </div>
-    </div>
+    <h2>Fiserv</h2>
+    <div id="fileList"></div>
 
     <script>
+      // Prevent default drag behaviors on the window
+      window.addEventListener("dragover", (e) => e.preventDefault());
+      window.addEventListener("drop", (e) => e.preventDefault());
+
+      // Handle drop on the whole window
+      window.addEventListener("drop", async (e) => {
+        e.preventDefault();
+
+        const files = e.dataTransfer.files;
+        if (!files.length) return;
+
+        for (const file of files) {
+          const formData = new FormData();
+          formData.append("file", file);
+
+          await fetch("/files/upload", {
+            method: "POST",
+            body: formData,
+          });
+        }
+
+        await loadFiles(); // refresh file list after upload
+      });
+
       async function loadFiles() {
         const res = await fetch("/files/meta");
         const data = await res.json();
@@ -109,30 +153,70 @@
 
         data.forEach((file) => {
           const fileContainer = document.createElement("div");
-          fileContainer.className = "fileblock";
-          fileContainer.innerHTML = `
-                    ${file.filename} (${file.size} bytes)
-                    <a href="/files/download/${file.id}" target="_blank">Download</a>
-                `;
+          fileContainer.className = "fileblock-container";
+
+          const stylishContainer = document.createElement("div");
+          stylishContainer.className =
+            "stylish-fileblock-container fileblock-wrapper";
+
+          const block = document.createElement("div");
+          block.className = "fileblock";
+
+          const name = document.createElement("div");
+          name.className = "fileblock-filename";
+          name.textContent = file.filename;
+
+          // 3-dot menu button
+          const menuButton = document.createElement("button");
+          menuButton.className = "menu-button";
+          menuButton.textContent = "⋮";
+
+          const menu = document.createElement("div");
+          menu.className = "fileblock-menu";
+
+          const downloadLink = document.createElement("a");
+          downloadLink.href = `/files/download/${file.id}`;
+          downloadLink.textContent = "Download";
+          downloadLink.target = "_blank";
+
+          const deleteLink = document.createElement("a");
+          deleteLink.href = "#";
+          deleteLink.textContent = "Delete";
+          deleteLink.onclick = async (e) => {
+            e.preventDefault();
+            await fetch(`/files/delete/${file.id}`, { method: "DELETE" });
+            await loadFiles();
+          };
+
+          menu.appendChild(downloadLink);
+          menu.appendChild(deleteLink);
+
+          menuButton.addEventListener("click", (e) => {
+            e.stopPropagation();
+            menu.style.display =
+              menu.style.display === "flex" ? "none" : "flex";
+          });
+
+          // Close menus on outside click
+          window.addEventListener("click", () => {
+            menu.style.display = "none";
+          });
+
+          stylishContainer.appendChild(menuButton);
+          stylishContainer.appendChild(menu);
+          stylishContainer.appendChild(block);
+          stylishContainer.appendChild(name);
+          fileContainer.appendChild(stylishContainer);
           fileList.appendChild(fileContainer);
         });
       }
-
-      document
-        .getElementById("uploadForm")
-        .addEventListener("submit", async (e) => {
-          e.preventDefault();
-          const form = e.target;
-          const formData = new FormData(form);
-          await fetch("/files/upload", {
-            method: "POST",
-            body: formData,
-          });
-          form.reset();
-          await loadFiles();
-        });
-
       loadFiles();
+
+      async function deleteFile(id) {
+        await fetch("/files/delete/" + id, {
+          method: "DELETE",
+        });
+      }
     </script>
   </body>
 </html>

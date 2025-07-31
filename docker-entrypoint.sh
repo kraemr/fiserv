@@ -2,10 +2,6 @@
 set -e
 
 
-echo "pw $MYSQL_PASSWORD"
-echo "mysql $MYSQL_USER"
-
-
 
 # Initialize MariaDB if needed
 if [ ! -d /var/lib/mysql/mysql ]; then
@@ -19,9 +15,7 @@ mysqld --user=mysql --bind-address=0.0.0.0 --port=3306 --console &
 
 sleep 4
 
-
-
-# Run bootstrap SQL if not done yet
+# Run bootstrap SQL if it wasnt run yet
 if [ ! -f /var/lib/mysql/.init_done ]; then
     echo "Bootstrapping MariaDB user and database..."
 
