@@ -1,6 +1,6 @@
 # fiserv
 
-Simple to use file-server offering fuzzy-search, tags, accounts and more
+Simple to use file-server offering fuzzy-search, tags, accounts and more, currently just a project for me to get used to Spring Boot
 
 # Architecture
 
