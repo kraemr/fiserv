@@ -1,4 +1,4 @@
-package com.example.server;
+package com.example.server.files;
 
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.example.server.GenericSuccessResponse;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -43,6 +44,7 @@ public class FileController {
             // Assuming files are stored under the first directory
             String dir = fileProperties.getLocations().get(0);
             File file = new File(dir, meta.getFilename());
+            
             // file doesnt exist
             if (!file.exists()) {
                 return GenericSuccessResponse.buildResponseEntity(404, false, "File doesnt exist");
@@ -68,8 +70,8 @@ public class FileController {
         }
     }
 
-    @PostMapping("/upload")
-    public ResponseEntity<GenericSuccessResponse> uploadFile(@RequestParam("file") MultipartFile file) {
+    @PostMapping("/upload/{folderId}")
+    public ResponseEntity<GenericSuccessResponse> uploadFile(@RequestParam("file") MultipartFile file, @PathVariable Long folderId) {
         try {
             String uploadDir = fileProperties.getLocations().get(0); // Use first directory
             File targetFile = new File(uploadDir, file.getOriginalFilename());
@@ -80,10 +82,11 @@ public class FileController {
             
             file.transferTo(targetFile);
 
-            FileMetaData meta = new FileMetaData();
+            FileMetaData meta = new FileMetaData(file.getOriginalFilename(),file.getSize(),folderId);
             
             meta.setFilename(file.getOriginalFilename());
             meta.setSize(file.getSize());
+            
 
             fileMetaDataRepository.save(meta);
 

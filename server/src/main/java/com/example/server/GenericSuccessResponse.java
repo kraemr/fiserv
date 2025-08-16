@@ -21,7 +21,7 @@ public class GenericSuccessResponse {
         return builder.body(new GenericSuccessResponse(this.success, this.status, this.message));
     }
 
-    static ResponseEntity<GenericSuccessResponse> buildResponseEntity(int status, boolean success, String message) {
+    public static ResponseEntity<GenericSuccessResponse> buildResponseEntity(int status, boolean success, String message) {
         BodyBuilder builder = ResponseEntity.status( status);
         return builder.body(new GenericSuccessResponse(success, status, message));
     }

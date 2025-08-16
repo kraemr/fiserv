@@ -1,4 +1,4 @@
-package com.example.server;
+package com.example.server.files;
 
 import jakarta.persistence.*;
 import java.util.Date;
