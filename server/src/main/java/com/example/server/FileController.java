@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -30,44 +32,50 @@ public class FileController {
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<String> deleteFile(@PathVariable Long id) {
+    public ResponseEntity<GenericSuccessResponse> deleteFile(@PathVariable Long id) {
         try {
             Optional<FileMetaData> optionalMeta = fileMetaDataRepository.findById(id);
-
             if (optionalMeta.isEmpty()) {
                 return ResponseEntity.notFound().build();
-            }
-        
+            }        
             FileMetaData meta = optionalMeta.get(); 
 
             // Assuming files are stored under the first directory
             String dir = fileProperties.getLocations().get(0);
             File file = new File(dir, meta.getFilename());
-
+            // file doesnt exist
             if (!file.exists()) {
-                return ResponseEntity.notFound().build();
-            }
-            
+                return GenericSuccessResponse.buildResponseEntity(404, false, "File doesnt exist");
+            }        
             if(file.delete()) {
                 fileMetaDataRepository.delete(meta);
-                return ResponseEntity.ok("File deleted");
-            }else{
-                return ResponseEntity.ok("File could not be deleted");
+                return GenericSuccessResponse.buildResponseEntity(200, true, "File successfully deleted");
+            }
+            // file could already be deleted but still be in the db or user running doesnt have permissions
+            else
+            {   
+                return GenericSuccessResponse.buildResponseEntity(500, false, "File couldnt be deleted");
             }
         }
         catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Deletion failed: " + e.getMessage());
+            try {
+                String err = "Deletion failed: " + e.getMessage();
+                return GenericSuccessResponse.buildResponseEntity(500, false, err);
+            }
+            catch(Exception jsonException) {
+                return ResponseEntity.internalServerError().build();
+            }         
         }
     }
 
     @PostMapping("/upload")
-    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<GenericSuccessResponse> uploadFile(@RequestParam("file") MultipartFile file) {
         try {
             String uploadDir = fileProperties.getLocations().get(0); // Use first directory
             File targetFile = new File(uploadDir, file.getOriginalFilename());
 
             if(targetFile.exists()){
-                return ResponseEntity.ok("{\"success\"}");
+                return GenericSuccessResponse.buildResponseEntity(200, false, "already uploaded");
             }
             
             file.transferTo(targetFile);
@@ -79,9 +87,15 @@ public class FileController {
 
             fileMetaDataRepository.save(meta);
 
-            return ResponseEntity.ok("File uploaded: " + targetFile.getAbsolutePath());
+            return GenericSuccessResponse.buildResponseEntity(200,true,"uploaded: " + targetFile.getAbsolutePath());
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Upload failed: " + e.getMessage());
+            try {
+                String err = "Upload failed: " + e.getMessage();
+                return GenericSuccessResponse.buildResponseEntity(500, false, err);
+            }
+            catch(Exception jsonException) {
+                return ResponseEntity.internalServerError().build();
+            }         
         }
     }
 
